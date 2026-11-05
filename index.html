@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent 协作基础设施全景框架</title>
+<style>
+    :root {
+        --text: #24292f;
+        --bg: #ffffff;
+        --border: #d0d7de;
+        --accent: #0969da;
+        --code-bg: #f6f8fa;
+        --table-header: #f6f8fa;
+        --card-bg: #f9f9fb;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        line-height: 1.75;
+        font-size: 16px;
+    }
+
+    /* --- Layout --- */
+    .page { max-width: 820px; margin: 0 auto; padding: 48px 32px 80px; }
+    @media (max-width: 900px) { .page { padding: 32px 16px 60px; } }
+
+    /* --- Typography --- */
+    h1.title { font-size: 2.4em; font-weight: 700; margin-bottom: 8px; line-height: 1.3; }
+    .subtitle { color: #57606a; font-size: 1.05em; margin-bottom: 48px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+
+    h2.module-title { font-size: 1.6em; font-weight: 600; margin-top: 64px; margin-bottom: 8px; line-height: 1.35; scroll-margin-top: 24px; }
+    h3.subsection { font-size: 1.2em; font-weight: 600; margin-top: 36px; margin-bottom: 6px; color: #27272a; }
+
+    p, li { margin-bottom: 10px; }
+    ul, ol { padding-left: 24px; margin-bottom: 14px; }
+    li { margin-bottom: 4px; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* --- Cards / Callouts --- */
+    .card { background: var(--card-bg); border-left: 3px solid var(--accent); padding: 16px 20px; margin: 20px 0; border-radius: 4px; }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* --- Tables --- */
+    table { width: 100%; border-collapse: collapse; margin: 18px 0 24px; font-size: 0.93em; }
+    th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { background: var(--table-header); font-weight: 600; white-space: nowrap; }
+    td code, table code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 0.92em; }
+
+    /* --- Code blocks / inline --- */
+    code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 0.89em; }
+
+    /* --- Divider between modules --- */
+    .module-sep { height: 1px; background: var(--border); margin: 56px 0; border: none; }
+
+    /* --- Priority table highlight --- */
+    .prio-table th:first-child, .prio-table td:first-child { text-align: center; white-space: nowrap; width: 70px; }
+
+    /* --- TOC --- */
+    .toc { background: var(--card-bg); padding: 18px 24px 20px; border-radius: 6px; margin-bottom: 48px; }
+    .toc-title { font-weight: 600; margin-bottom: 8px; }
+    .toc ol { padding-left: 20px; margin: 0; }
+    .toc li { margin-bottom: 3px; }
+
+    /* --- Section anchor helper --- */
+    h2.module-title a, h3.subsection a { color: var(--text); text-decoration: none; margin-left: 6px; opacity: 0.45; font-size: 0.8em; }
+    h2.module-title:hover a, h3.subsection:hover a { opacity: 1; }
+
+    /* --- Section divider line --- */
+    .block-sep { border: none; height: 6px; background: linear-gradient(to right, transparent, var(--border) 50%, transparent); margin: 48px 0; }
+
+    /* --- Print-friendly --- */
+    @media print { body { font-size: 12pt; } .page { max-width: none; padding: 0; } table { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ===== Title ===== -->
+<h1 class="title">Agent 协作基础设施全景框架</h1>
+<p class="subtitle">7 大模块 · 持续迭代认知 · 模型选型学习路径</p>
+
+<!-- ===== TOC ===== -->
+<nav class="toc">
+<div class="toc-title">目录</div>
+<ol>
+<li><a href="#module-1">模块一：System Prompt 工程</a></li>
+<li><a href="#module-2">模块二：Skill / Tool 架构</a></li>
+<li><a href="#module-3">模块三：Session 生命周期管理</a></li>
+<li><a href="#module-4">模块四：Evaluation / 质量闸门</a></li>
+<li><a href="#module-5">模块五：模型路由</a></li>
+<li><a href="#module-6">模块六：知识管理与 Retrieval</a></li>
+<li><a href="#module-7">模块七：Observability / 自我监控</a></li>
+<li><a href="#section-2">持续迭代协作认知</a></li>
+<li><a href="#section-3">模型选型学习路径</a></li>
+<li><a href="#priority-table">优先行动（按 ROI）</a></li>
+</ol>
+</nav>
+
+<hr class="block-sep">
+
+<!-- ==================================================================== -->
+<!-- MODULE 1                                                              -->
+<!-- ==================================================================== -->
+<h2 class="module-title" id="module-1"><a href="#module-1">#</a>模块一：System Prompt 工程</h2>
+
+<h3 class="subsection" id="m1-problem">它解决什么物理问题</h3>
+<p>LLM 每一轮对话都会收到完整的 system prompt + 历史消息。System prompt 中的内容是模型行为的<span style="font-weight:600">"宪法"</span>——它决定模型在无人监督时的默认行为。但 system prompt 的每一个 char 都要在每个 turn 重新计费（即使有 cache，首次创建也需要 cache write 开销）。</p>
+
+<div class="card"><p><strong>物理约束：</strong>system prompt 越长 → 每 turn 固定税越高 → 长 session 累积成本呈二次方增长。</p></div>
+
+<h3 class="subsection" id="m1-industry">行业框架</h3>
+<table>
+<thead><tr><th>层级</th><th>内容</th><th>加载时机</th><th style="white-space:nowrap">大小控制</th></tr></thead>
+<tbody>
+<tr><td>L0：不可变核心</td><td>语言、安全、身份、禁止行为</td><td>每个 session</td><td>&lt; 500 tokens</td></tr>
+<tr><td>L1：角色规则</td><td>你的数据分析师角色特有的约束（DB 连接方式、SQL 引擎、表查找规则）</td><td>每个 session</td><td>&lt; 2K tokens</td></tr>
+<tr><td>L2：项目规则</td><td>某个 repo/项目独有的规则（如 CBRG_Work/AGENTS.md）</td><td>进入该项目时</td><td>&lt; 4K tokens</td></tr>
+<tr><td>L3：任务上下文</td><td>当前任务需要的背景信息</td><td>按需 tool call 拉取</td><td>不固定</td></tr>
+</tbody>
+</table>
+
+<p><code>.cursorrules</code>（Cursor）就是 L1 + L2 层。Anthropic 官方建议 system prompt 控制在 &lt;4K tokens。Vercel v0 按项目类型动态切换 L2 规则。</p>
+
+<div class="card"><p><strong>关键原则：</strong>只有"不读就会犯错"的规则放在 always-on 层（L0+L1），其他全部按需拉取（L3）。判断标准：这条规则如果模型不在 context 里看到，它在这类任务中犯错的概率有多高？如果概率低于 <code>10%</code>，就不应该 always-on。</p></div>
+
+<h3 class="subsection" id="m1-current">你目前的位置</h3>
+<p>经过今天的优化，你的 <code>CLAUDE.md</code> 已经压缩到 ~2,200 chars，结构合理。但 <code>CBRG_Work/AGENTS.md</code> (15K chars) 中有大量内容（如"Low ASP VI 分析"专项口径）只在极少数 session 中用到，却每次都被加载。</p>
+
+<h3 class="subsection" id="m1-next">下一步</h3>
+<ul>
+<li>将 <code>CBRG_Work/AGENTS.md</code> 拆分：核心规则（Scope 定义、Bundle 排除、OVI 规则）保留 always-on；专项口径（Low ASP、邮件机制、Presto 注意事项）移到按需读取。</li>
+<li><strong>目标：</strong>AGENTS.md always-on 部分 &lt; 4K tokens，专项部分通过 kb-search 或直接 read 按需加载。</li>
+</ul>
+
+<hr class="module-sep">
+
+<!-- ==================================================================== -->
+<!-- MODULE 2                                                              -->
+<!-- ==================================================================== -->
+<h2 class="module-title" id="module-2"><a href="#module-2">#</a>模块二：Skill / Tool 架构</h2>
+
+<h3 class="subsection" id="m2-problem">它解决什么物理问题</h3>
+<p>LLM 的<span style="font-weight:600">"幻觉"</span>和<span style="font-weight:600">"偷懒"</span>是两种不同的失败模式：</p>
+<ul>
+<li><strong>幻觉</strong>：模型不知道正确答案，编一个出来。</li>
+<li><strong>偷懒</strong>：模型知道应该按步骤来，但直接跳步输出"看起来合理"的结果。</li>
+</ul>
+
+<p>Skill 系统的本质是用 <strong>deterministic</strong> 的程序逻辑替代 <strong>probabilistic</strong> 的模型推理——把已知的正确流程固化下来，不给模型"自由发挥"的空间。</p>
+
+<h3 class="subsection" id="m2-industry">行业框架</h3>
+<table>
+<thead><tr><th>组件</th><th>作用</th><th>设计原则</th></tr></thead>
+<tbody>
+<tr><td>Trigger 规则</td><td>关键词/场景 → 激活对应 skill</td><td>触发词要穷举常见的用户表达方式。</td></tr>
+<tr><td>Skill 文件</td><td>步骤级执行规程</td><td>每一步都要写 input / output / 验证条件。</td></tr>
+<tr><td>禁止清单</td><td>列出模型在这个任务中不能做的事</td><td>基于历史犯错记录持续补充。</td></tr>
+<tr><td>Tool 权限</td><td>限制 skill 可用的工具集</td><td>最小权限原则——审查 agent 不给 exec。</td></tr>
+</tbody>
+</table>
+
+<p>OpenAI 的 Assistants API 和 Anthropic 的 tool use 都遵循这个模式。LangChain 社区的 "structured output + tool binding" 也是同一思路。</p>
+
+<div class="card"><p><strong>关键原则：</strong>一个 skill 应该能被一个完全没有上下文的新 session 正确执行——如果你的 skill 依赖"之前的对话中提到过 X"，那它的设计就有问题。</p></div>
+
+<h3 class="subsection" id="m2-current">你目前的位置</h3>
+<p>你的 skill 体系（dashboard-refresh、vendor-vi-dedup、knowledge-sync 等）在设计上是正确的。特别是 vendor-vi-dedup 的 Phase 0→3 分阶和 sql-auditor 的 8 维度检查清单。</p>
+
+<h3 class="subsection" id="m2-next">下一步</h3>
+<ul>
+<li>给每个 skill 补充 <strong>expected output / exit criteria</strong>——目前你的 skill 大多描述了"做什么"，但没有描述"做完之后怎么验证做对了"。</li>
+<li>把 data-sanity-checker 从 ad-hoc 调用变成 pipeline 集成——在 run_*.sh 中自动触发。</li>
+</ul>
+
+<hr class="module-sep">
+
+<!-- ==================================================================== -->
+<!-- MODULE 3                                                              -->
+<!-- ==================================================================== -->
+<h2 class="module-title" id="module-3"><a href="#module-3">#</a>模块三：Session 生命周期管理</h2>
+
+<h3 class="subsection" id="m3-problem">它解决什么物理问题</h3>
+<p>LLM 的 context window 是有限资源。每一轮对话，模型要重新读取完整的历史消息。第 N 轮的 prompt token 数 ≈ <code>system_prompt + Σ(前 N-1 轮的消息)</code>。这是一个 O(N²) 的累积过程——你的数据验证了 tokens ≈ 907 × steps²。</p>
+<p>同时，Transformer 的注意力机制在超长 context 中会出现 <strong>attention dilution</strong>——中间位置的信息被模型关注的权重降低（"Lost in the Middle" 现象，Liu et al. 2023）。这意味着你在第 10 步给的关键指令，到第 300 步时模型可能已经"记住但不重视"。</p>
+
+<h3 class="subsection" id="m3-industry">行业框架</h3>
+<table>
+<thead><tr><th>策略</th><th>做法</th><th>谁在用</th></tr></thead>
+<tbody>
+<tr><td><strong>Hard step limit</strong></td><td>Session 超过 N 步自动提示拆分</td><td>Stripe (80 步), Devin 内部有 soft limit。</td></tr>
+<tr><td><strong>Context handoff</strong></td><td>Session 结束时生成结构化摘要，新 session 读取摘要继续</td><td>Anthropic 推荐, Cursor "notepad" 功能。</td></tr>
+<tr><td><strong>Periodic re-anchoring</strong></td><td>每 50 步重新注入关键约束</td><td>Google DeepMind Gemini。</td></tr>
+<tr><td><strong>Context compression</strong></td><td>自动对旧消息做摘要压缩</td><td>ChatGPT memory, Claude Projects。</td></tr>
+</tbody>
+</table>
+
+<div class="card"><p><strong>关键原则：</strong>session 是一次性资源，用完就扔。不要试图在一个 session 里完成所有事情。开新 session 的成本（重新描述上下文 ~500 tokens）远小于维持长 session 的成本（二次方增长 + 注意力衰减）。</p></div>
+
+<h3 class="subsection" id="m3-current">你目前的位置</h3>
+<p>你没有任何 session 管理策略。30 天内有 5 个 session 超过 300 步，最长的达到 <strong>709 步</strong>。</p>
+
+<h3 class="subsection" id="m3-next">下一步</h3>
+<ul>
+<li>在 CLAUDE.md 中加一条简单规则：当 session 超过 <strong>80 步</strong>时，主动建议用户开新 session 并提供 context handoff 摘要。</li>
+<li><strong>更重要的是养成习惯：</strong>当你感觉对话变慢、模型开始重复之前说过的话、或者任务方向发生了显著转变时，就是该开新 session 的信号。</li>
+</ul>
+
+<hr class="module-sep">
+
+<!-- ==================================================================== -->
+<!-- MODULE 4                                                              -->
+<!-- ==================================================================== -->
+<h2 class="module-title" id="module-4"><a href="#module-4">#</a>模块四：Evaluation / 质量闸门</h2>
+
+<h3 class="subsection" id="m4-problem">它解决什么物理问题</h3>
+<p>LLM 的输出是 <strong>probabilistic</strong> 的——同样的 prompt 可能产生不同的输出。你不能假设模型"这次做对了，以后也会做对"。Evaluation 体系的作用是把不确定性的检测从人类转移到自动化系统。</p>
+
+<h3 class="subsection" id="m4-industry">行业框架</h3>
+<table>
+<thead><tr><th>层级</th><th>流程</th><th>触发条件</th><th>闸门行为</th></tr></thead>
+<tbody>
+<tr><td><strong>代码层</strong><br><code>sql-auditor</code></td><td>输入 → SQL 审查 → 执行</td><td>新建/修改 SQL</td><td>阻断 commit</td></tr>
+<tr><td><strong>数据层</strong><br><code>sanity-check</code></td><td>数据检查</td><td>数据产出后，发布前</td><td>CRITICAL → ABORT</td></tr>
+<tr><td><strong>展示层</strong><br><code>validate.py</code></td><td>渲染 → 显示检查</td><td>HTML 产出后，发布前</td><td>error → ABORT</td></tr>
+</tbody>
+</table>
+
+<p>Airbnb 数据平台团队的做法是在 data pipeline 的每一步都插入 <strong>"expectation"</strong>（Great Expectations 框架），包括：schema test、volume test、freshness test、custom business logic test。</p>
+
+<div class="card"><p><strong>关键原则：</strong>evaluation 必须是 pipeline 中的必经节点，不是可选步骤。如果一个检查需要人记得手动调用，它迟早会被跳过。</p></div>
+
+<h3 class="subsection" id="m4-current">你目前的位置</h3>
+<p>你的 <code>validate.py</code>（7 个）和 <code>sanity_check.py</code> 已经集成到 run_*.sh 的 pipeline 中，这一点做得很好。但 sql-auditor 和 data-sanity-checker subagent 是 ad-hoc 设计，没有自动化触发。</p>
+
+<h3 class="subsection" id="m4-next">下一步</h3>
+<ul>
+<li>logic_check.py 的黑名单从 6 条扩展到覆盖 AGENTS.md 中的每个"常见错误"。</li>
+<li>在 CLAUDE.md 触发路由表中增加一行：新 SQL 产出且含 OVI/bundle/scope 相关逻辑 → 自动 invoke sql-auditor subagent，审查通过后才可 commit。</li>
+</ul>
+
+<hr class="module-sep">
+
+<!-- ==================================================================== -->
+<!-- MODULE 5                                                              -->
+<!-- ==================================================================== -->
+<h2 class="module-title" id="module-5"><a href="#module-5">#</a>模块五：模型路由</h2>
+
+<h3 class="subsection" id="m5-problem">它解决什么物理问题</h3>
+<p>不同模型有不同的 capability/cost tradeoff。用 Opus 执行 git push 就像用显微镜看路——能力过剩但成本浪费。</p>
+
+<h3 class="subsection" id="m5-industry">行业框架</h3>
+<table>
+<thead><tr><th>任务特征</th><th>适合的模型</th><th>原因</th></tr></thead>
+<tbody>
+<tr><td>需要长链推理、新问题、设计决策</td><td><strong>Opus</strong>（最强推理）</td><td>复杂推理是 Opus 唯一不可替代的能力。</td></tr>
+<tr><td>结构化任务、已知模式、SQL 生成</td><td><strong>Sonnet</strong>（高性价比）</td><td>SQL 语法是高频训练数据，Sonnet 够用。</td></tr>
+<tr><td>格式转换、模板填充、简单执行</td><td><strong>Haiku</strong>（最快最便宜）</td><td>不需要推理能力。</td></tr>
+<tr><td>代码审查、数据检查</td><td><strong>Sonnet</strong></td><td>需要覆盖面而非深度。</td></tr>
+</tbody>
+</table>
+
+<div class="card"><p><strong>判断规则（实用版）：</strong>如果你能提前写出这个任务的每一步（step 1 做什么, step 2 做什么…），那它就不需要 Opus。Opus 的价值在于"我不知道该怎么拆解这个问题"的场景。</p></div>
+<p>Notion AI 团队的公开分享：他们的 model router 先用一个轻量分类器判断任务复杂度，然后路由到对应模型。他们的数据显示 <strong>~70%</strong> 的请求用 Haiku/Sonnet 就能达到 Opus 90% 以上的质量。</p>
+
+<h3 class="subsection" id="m5-current">你目前的位置</h3>
+<p><strong>96% Opus 使用。</strong>仅 subagent 用了 Sonnet。</p>
+
+<hr class="module-sep">
+
+<!-- ==================================================================== -->
+<!-- MODULE 6                                                              -->
+<!-- ==================================================================== -->
+<h2 class="module-title" id="module-6"><a href="#module-6">#</a>模块六：知识管理与 Retrieval</h2>
+
+<h3 class="subsection" id="m6-problem">它解决什么物理问题</h3>
+<p>LLM 的参数知识（training data）有截止日期、有覆盖盲区、且无法保证准确。对于你的业务领域（CBRG 口径、表结构、指标定义），模型的参数知识完全不可用——这些是公司内部知识。</p>
+<p>Retrieval 系统（RAG）的作用是在运行时把正确的知识注入 context，替代模型的参数记忆。</p>
+
+<h3 class="subsection" id="m6-industry">行业框架</h3>
+<table>
+<thead><tr><th>层级</th><th>内容类型</th><th>检索方式</th><th>你已有的</th></tr></thead>
+<tbody>
+<tr><td>精确查找</td><td>表结构、指标公式</td><td>路径匹配 (<code>tables/&lt;schema&gt;/&lt;table&gt;.yaml</code>)</td><td>YAML 表文档 ✓</td></tr>
+<tr><td>术语规范</td><td>同义词、缩写</td><td>glossary 字典查找</td><td>glossary.md ✓</td></tr>
+<tr><td>语义检索</td><td>业务概念、领域知识</td><td>embedding 向量搜索</td><td>kb-search MCP ✓</td></tr>
+<tr><td>兜底</td><td>以上都没命中</td><td>让模型 ask clarification</td><td>AGENTS.md 规则 ✓</td></tr>
+</tbody>
+</table>
+
+<h3 class="subsection" id="m6-current">你目前的位置</h3>
+<p>你的知识管理基础设施（rg-context-da，273 个文件，glossary + metric cards + table YAMLs + kb-search）在数据分析师中是极少见的。<strong>这是你最强的模块。</strong></p>
+
+<h3 class="subsection" id="m6-next">下一步</h3>
+<ul>
+<li>把 <code>kb_telemetry</code> 真正跑起来——你需要知道哪些文档被频繁读取、哪些从来没用过。</li>
+<li>定期（每月）review telemetry 数据，删掉 0 读取的文档，补充高频缺失的文档。</li>
+</ul>
+
+<hr class="module-sep">
+
+<!-- ==================================================================== -->
+<!-- MODULE 7                                                              -->
+<!-- ==================================================================== -->
+<h2 class="module-title" id="module-7"><a href="#module-7">#</a>模块七：Observability / 自我监控</h2>
+
+<h3 class="subsection" id="m7-problem">它解决什么物理问题</h3>
+<p><strong>"你无法优化你无法度量的东西。"</strong></p>
+<p>如果不知道 token 消耗的分布、session 的失败率、模型犯错的高发场景，所有优化都是猜测。</p>
+
+<h3 class="subsection" id="m7-industry">行业框架</h3>
+<table>
+<thead><tr><th>指标</th><th>含义</th><th>怎么测</th></tr></thead>
+<tbody>
+<tr><td><strong>Token burn rate</strong></td><td>每个"有效产出"（一个 SQL、一个 dashboard 更新）消耗多少 token</td><td>total_prompt_tokens / 有效产出数</td></tr>
+<tr><td><strong>Session 完成率</strong></td><td>一个 session 是否成功完成了目标任务</td><td>人工标注 or session 结尾自动评估。</td></tr>
+<tr><td><strong>Step efficiency</strong></td><td>多少步完成任务</td><td>steps / 任务复杂度。</td></tr>
+<tr><td><strong>Cache hit rate</strong></td><td>缓存命中率</td><td>API 返回的 cache_read vs total。</td></tr>
+<tr><td><strong>Error rate by category</strong></td><td>按任务类型的失败率</td><td>回顾 session 结果。</td></tr>
+</tbody>
+</table>
+
+<div class="card"><p><strong>关键原则：</strong>你今天做的 token 分析就是一次 ad-hoc observability。它应该变成一个周期性的例行动作——就像你做的 dashboard WoW 监控一样。</p></div>
+
+<h3 class="subsection" id="m7-current">你目前的位置</h3>
+<p><strong>无。</strong>今天是第一次审计。</p>
+
+<h3 class="subsection" id="m7-next">下一步</h3>
+<p>最 lightweight 的做法：每周跑一次分析脚本（你可以在 <code>stats-cache.json</code> 的基础上扩展），看三个指标：</p>
+<ol>
+<li>本周 top 5 token 消耗 session 和原因。</li>
+<li>平均 steps/session 趋势。</li>
+<li>Opus vs Sonnet 使用比例。</li>
+</ol>
+
+<hr class="block-sep">
+
+<!-- ==================================================================== -->
+<!-- SECTION 2: 持续迭代协作认知                                           -->
+<!-- ==================================================================== -->
+<h2 class="module-title" id="section-2"><a href="#section-2">#</a>二、如何持续迭代协作认知</h2>
+
+<div class="card"><p><strong>核心原则：</strong>Agent Engineering 不是"学一次就会"的技能。它更像是一个持续追踪的领域——因为底层模型每 3-6 个月会有一次 capability jump，每次 jump 都会改变"哪些任务该让模型做 vs 哪些该人做"的边界。</p></div>
+
+<h3 class="subsection">信息源分层</h3>
+<table>
+<thead><tr><th>层级</th><th>内容</th><th>信息源</th><th style="white-space:nowrap">频率</th></tr></thead>
+<tbody>
+<tr><td>L1：模型能力变化</td><td>新模型发布、capability benchmark</td><td>Anthropic Blog、OpenAI Blog、模型发布 changelog</td><td>每 1-3 个月看一次</td></tr>
+<tr><td>L2：工程实践</td><td>prompt engineering、agent architecture</td><td>Anthropic cookbook/docs、行业公司技术博客</td><td>每月看一次</td></tr>
+<tr><td>L3：工具/框架</td><td>Devin/Cursor/Claude Code 的功能更新</td><td>工具的 changelog、GitHub release notes</td><td>每次更新时看</td></tr>
+<tr><td>L4：自己的数据</td><td>token 消耗、session 效率、错误模式</td><td>你本地的 stats-cache.json、transcripts</td><td>每周看一次</td></tr>
+</tbody>
+</table>
+
+<h3 class="subsection">L1：模型能力变化——必须跟踪的信源</h3>
+<table>
+<thead><tr><th>来源</th><th>说明</th><th style="white-space:nowrap">URL / 搜索词</th></tr></thead>
+<tbody>
+<tr><td>Anthropic 官方文档</td><td>最权威；"Model comparison" + "Prompt engineering" guide。</td><td><a href="https://docs.anthropic.com" target="_blank">docs.anthropic.com</a></td></tr>
+<tr><td>Anthropics News</td><td>模型发布公告，会说明新模型在哪些维度提升。</td><td><a href="https://anthropic.com/news" target="_blank">anthropic.com/news</a></td></tr>
+<tr><td>LM Arena (原 Chatbot Arena)</td><td>基于人类盲评的 Elo 排名，最可靠的模型间横向比较。</td><td><a href="https://lmarena.ai" target="_blank">lmarena.ai</a></td></tr>
+<tr><td>Artificial Analysis</td><td>标准化的 speed/quality/cost 三维比较。</td><td><a href="https://artificialanalysis.ai" target="_blank">artificialanalysis.ai</a></td></tr>
+</tbody>
+</table>
+
+<h4>怎么判断一个新模型对你有没有用？</h4>
+<p>当一个新模型发布时，问自己三个问题：</p>
+<ol>
+<li>它在 code generation 和 instruction following 上比前代提升了多少？（这是数据分析师最依赖的两个维度。）</li>
+<li>它的价格和速度相比同级别模型是什么位置？</li>
+<li>它的 context window 是否有变化？（影响你的 session 管理策略。）</li>
+</ol>
+
+<h3 class="subsection">L2：工程实践——从谁那里学</h3>
+<table>
+<thead><tr><th>来源</th><th>为什么值得看</th><th style="white-space:nowrap">URL / 搜索词</th></tr></thead>
+<tbody>
+<tr><td>Anthropic Cookbook</td><td>官方的 prompt engineering 最佳实践，有实际代码。</td><td>github.com/anthropics/anthropic-cookbook</td></tr>
+<tr><td>Anthropic Docs: Build with Claude</td><td>系统化的 agent 架构指南。</td><td>docs.anthropic.com/en/docs/build-with-claude</td></tr>
+<tr><td>Simon Willison 的博客</td><td>AI 工程领域最勤奋的 practitioner，每周记录实践经验。</td><td>simonwillison.net</td></tr>
+<tr><td>Latent Space Podcast</td><td>AI Engineering 领域最好的技术播客，深度访谈。</td><td>latent.space</td></tr>
+<tr><td>AI Engineer 大会分享</td><td>年度会议，Stripe/Notion/Vercel 等公司的工程实践分享。</td><td>YouTube 搜 "AI Engineer Summit"</td></tr>
+</tbody>
+</table>
+
+<h3 class="subsection">L3：工具更新——怎么跟踪</h3>
+<ul>
+<li><strong>Devin CLI：</strong><code>devin --version</code> + GitHub release notes。</li>
+<li><strong>Claude Code：</strong><code>claude --version</code> + Anthropic changelog。</li>
+<li>当工具大版本更新时，看一下它的 "what's new"——特别关注 session 管理、模型选择、缓存策略方面的变化。</li>
+</ul>
+
+<h3 class="subsection">L4：自己的数据——最重要但最容易忽略</h3>
+<p>建立一个月度 review 习惯（就像你做的 business WoW 监控）：</p>
+<ul>
+<li><strong>每周 5 分钟：</strong>跑 stats-cache.json 分析脚本，看 top token consumer 和 session 步数分布。</li>
+<li><strong>每月 30 分钟：</strong>回顾当月的 session 列表，标注哪些 session "效率高"（少步骤完成了复杂任务）、哪些"效率低"（多步骤但产出不大），找出 pattern。</li>
+<li><strong>每季度：</strong>review CLAUDE.md 和 skills——哪些规则从来没被触发过？哪些新的错误模式需要加防护？</li>
+</ul>
+
+<h3 class="subsection">迭代方法论：OODA 循环</h3>
+<div style="text-align:center; margin:16px 0;">
+<code>Observe → Orient → Decide → Act → (回到 Observe)</code><br>
+<span style="font-size:0.92em;color:#57606a;">看 token 数据 → 对照行业实践 → 决定改什么 → 改 CLAUDE.md/skills → 测试效果</span>
+</div>
+
+<p>每次迭代只改一个变量——这是你作为数据分析师应该很熟悉的实验设计原则。不要同时改 system prompt + 换模型 + 调 session 长度，否则你不知道是哪个变化带来了效果。</p>
+
+<hr class="block-sep">
+
+<!-- ==================================================================== -->
+<!-- SECTION 3: 模型选型学习路径                                           -->
+<!-- ==================================================================== -->
+<h2 class="module-title" id="section-3"><a href="#section-3">#</a>三、模型选型——从零开始的学习路径</h2>
+
+<h3 class="subsection">Step 0：理解"模型"是什么</h3>
+<p>一个 LLM 模型本质上是一组固定的参数权重（比如 Opus 4 大约有数千亿参数）。更多参数 = 更强的推理能力 = 更贵 = 更慢。</p>
+
+<div class="card"><table style="margin:0;border:none;">
+<thead><tr><th style="border:none;background:transparent;white-space:nowrap" colspan="3">同一代技术栈</td></tr></thead>
+<tbody>
+<tr><td style="text-align:center;border-left:none;border-right:none;"><strong>Haiku（轻量）</strong></td><td style="text-align:center;border-left:none;border-right:none;">→</td><td style="border:none;"><strong>Sonnet（平衡）</strong> → <strong>Opus（旗舰）</strong></td></tr>
+<tr><td style="font-size:0.88em;color:#57606a;text-align:center;border-left:none;border-right:none;">经济舱：速度快 / 便宜</td><td style="border-left:none;border-right:none;font-size:0.88em;color:#57606a;text-align:center;"></td><td style="font-size:0.88em;color:#57606a;">头等舱：最强推理 / 最贵</td></tr>
+</tbody>
+</table></div>
+
+<h3 class="subsection">Step 1：理解定价结构</h3>
+<p>所有 LLM API 都按 token 计费。Token ≈ 0.75 个英文单词 ≈ 0.5 个中文字。</p>
+<p><strong>定价分两个维度：</strong></p>
+<ul>
+<li><strong>Input tokens</strong>（你发给模型的内容）：system prompt + 历史消息 + 当前问题。</li>
+<li><strong>Output tokens</strong>（模型回复的内容）：模型的回答。</li>
+</ul>
+
+<h4>当前 Anthropic 定价（每百万 tokens）</h4>
+<table>
+<thead><tr><th>模型</th><th style="white-space:nowrap">Input</th><th style="white-space:nowrap">Output</th><th style="white-space:nowrap">Cache Read</th><th style="white-space:nowrap">Cache Write</th><th style="white-space:nowrap">相对成本</th></tr></thead>
+<tbody>
+<tr><td><strong>Haiku 3.5</strong></td><td>$0.80</td><td>$4</td><td>$0.08</td><td>$0.80</td><td>1x</td></tr>
+<tr><td><strong>Sonnet 4</strong></td><td>$3</td><td>$15</td><td>$0.375</td><td>$3</td><td>~3.75x</td></tr>
+<tr><td><strong>Opus 4</strong></td><td>$15</td><td>$75</td><td>$1.875</td><td>$18.75</td><td>~19x</td></tr>
+</tbody>
+</table>
+
+<p><strong>关键洞察：</strong>Opus 的 output token 价格是 Sonnet 的 <strong>5 倍</strong>、Haiku 的 <strong>18.75 倍</strong>。但 Opus 的推理能力并不是 Sonnet 的 5 倍——在大多数结构化任务上，差距可能只有 5-15%。</p>
+
+<h3 class="subsection">Step 2：理解能力差异在哪里</h3>
+<p>Sonnet 和 Opus 实际上差在哪？根据 Anthropic 官方 benchmark 和 Chatbot Arena 数据：</p>
+<table>
+<thead><tr><th>能力维度</th><th style="white-space:nowrap">Sonnet vs Opus</th><th>对你的影响</th></tr></thead>
+<tbody>
+<tr><td>代码生成</td><td>Sonnet ≈ Opus 的 <strong>95%+</strong></td><td>SQL 生成、Python 脚本几乎无差异。</td></tr>
+<tr><td>指令遵循</td><td>Sonnet ≈ Opus 的 <strong>90%+</strong></td><td>按 skill 步骤执行的任务差异极小。</td></tr>
+<tr><td>长链推理</td><td>Sonnet ≈ Opus 的 <strong>80-85%</strong></td><td>需要 5+ 步逻辑推导的分析有差距。</td></tr>
+<tr><td>创造性/开放性</td><td>Sonnet &lt; Opus</td><td>新工具设计、方法论创新有差距。</td></tr>
+<tr><td>上下文理解</td><td>Sonnet ≈ Opus 的 <strong>90%+</strong></td><td>理解已有代码、读懂复杂文档差异小。</td></tr>
+</tbody>
+</table>
+
+<div class="card"><p><strong>实际结论：</strong>你的大部分工作（SQL 生成、dashboard 刷新、代码执行、文件编辑）都在 Sonnet 的能力覆盖范围内。只有"设计一个新的分析框架"或"从零搭建一套系统"这类开放性任务才需要 Opus。</p></div>
+
+<h3 class="subsection">Step 3：建立你自己的判断标准</h3>
+<p><strong>不要依赖 benchmark，要做你自己的 A/B 测试。</strong></p>
+<p>方法：对同一个典型任务，分别用 Sonnet 和 Opus 各做一次，比较结果质量。你只需要做 <strong>5-8 个典型任务的对比</strong>就能建立直觉。</p>
+
+<h4>建议的测试任务（来自你的实际工作）</h4>
+<table>
+<thead><tr><th>测试任务</th><th>测什么</th><th style="white-space:nowrap">预期结果</th></tr></thead>
+<tbody>
+<tr><td>"写一个查 CBRG OVI 的 SQL，按 unitname1 分组"</td><td>SQL 生成准确性</td><td>Sonnet ≈ Opus</td></tr>
+<tr><td>"刷新 cbrg dashboard"</td><td>按 skill 步骤执行</td><td>Sonnet ≈ Opus</td></tr>
+<tr><td>"暂停 14:00 自动发布"</td><td>简单操作执行</td><td>Haiku ≈ Sonnet ≈ Opus</td></tr>
+<tr><td>"排查 MBR 月度刷新失败的原因"</td><td>长链 debug 推理</td><td>Opus &gt; Sonnet</td></tr>
+<tr><td>"设计一个新的 XX 分析工具"</td><td>开放性设计</td><td>Opus &gt; Sonnet</td></tr>
+</tbody>
+</table>
+
+<p>做完测试后，建立你自己的<strong>路由表</strong>——就像你做的 CBRG trigger 路由一样，只不过这次路由的是模型而非 skill。</p>
+
+<h3 class="subsection">Step 4：实际操作——在 Devin 中切换模型</h3>
+<table>
+<thead><tr><th>操作</th><th style="white-space:nowrap">命令 / 配置</th></tr></thead>
+<tbody>
+<tr><td>查看当前默认模型</td><td><code>cat ~/.config/devin/config.json | grep model</code></td></tr>
+<tr><td>单次使用 Sonnet 启动</td><td><code>devin --model claude-sonnet-4-6</code></td></tr>
+<tr><td>在 config.json 中修改默认</td><td>编辑 <code>config.json</code>，将 model 字段改为 sonnet。</td></tr>
+</tbody>
+</table>
+
+<h4>建议的渐进式切换策略</h4>
+<table class="prio-table">
+<thead><tr><th>阶段</th><th>做法</th><th>持续时间</th></tr></thead>
+<tbody>
+<tr><td><strong>第一周</strong></td><td>所有"刷新/发布/暂停"类任务手动用 Sonnet。</td><td>建立 Sonnet 在执行任务上够用的信心。</td></tr>
+<tr><td><strong>第二周</strong></td><td>SQL 生成/查询类任务用 Sonnet。</td><td>验证 SQL 质量是否达标。</td></tr>
+<tr><td><strong>第三周</strong></td><td>只在"新建工具/复杂 debug"时用 Opus。</td><td>确认 Opus 独特价值的边界。</td></tr>
+<tr><td><strong>之后（稳态）</strong></td><td><strong>~30% Opus + ~60% Sonnet + ~10% Haiku</strong></td><td>持续优化。</td></tr>
+</tbody>
+</table>
+
+<h3 class="subsection">Step 5：持续校准</h3>
+<p>每次 Anthropic 发布新版模型时（通常每 3-6 个月），重新做 Step 3 的 A/B 测试。因为：</p>
+<ul>
+<li>新版 Sonnet 可能已经追上了旧版 Opus 的推理能力。</li>
+<li>价格可能调整。</li>
+<li>新能力可能改变路由策略。</li>
+</ul>
+
+<hr class="block-sep">
+
+<!-- ==================================================================== -->
+<!-- PRIORITY TABLE                                                          -->
+<!-- ==================================================================== -->
+<h2 class="module-title" id="priority-table"><a href="#priority-table">#</a>优先行动（按 ROI 从高到低）</h2>
+
+<table>
+<thead><tr><th style="white-space:nowrap">优先级</th><th>行动</th><th style="white-space:nowrap">投入</th><th style="white-space:nowrap">收益</th></tr></thead>
+<tbody>
+<tr><td><strong>P0</strong></td><td>养成 session 拆分习惯（&lt;80 步）</td><td>零（纯行为改变）</td><td>节省 <strong>40-50%</strong> token。</td></tr>
+<tr><td><strong>P1</strong></td><td>用 Sonnet 做执行类任务</td><td>每次启动时选模型</td><td>节省 <strong>50-60%</strong> 成本。</td></tr>
+<tr><td><strong>P2</strong></td><td>每周看一次 token 数据</td><td>5 分钟/周</td><td>持续发现浪费。</td></tr>
+<tr><td><strong>P3</strong></td><td>CBRG_Work/AGENTS.md 拆分 always-on vs 按需加载</td><td>1-2 小时一次性</td><td>节省 ~<strong>15%</strong> system prompt。</td></tr>
+<tr><td><strong>P4</strong></td><td>sql-auditor 集成到新 SQL 产出流程</td><td>加一行 trigger 规则</td><td>减少 SQL 口径错误。</td></tr>
+<tr><td><strong>P5</strong></td><td>logic_check.py 黑名单扩展</td><td>根据 AGENTS.md 补充</td><td>减少 dashboard 口径错误。</td></tr>
+<tr><td><strong>P6</strong></td><td>kb_telemetry 跑起来 + 月度 review</td><td>激活现有脚本</td><td>知识库 ROI 可度量。</td></tr>
+</tbody>
+</table>
+
+<div class="card"><p style="font-weight:600;">P0 和 P1 是零成本、立即生效的。先做这两个，效果比其他所有加起来都大。</p></div>
+
+<!-- Footer -->
+<footer style="margin-top:56px;padding-top:24px;border-top:1px solid var(--border);font-size:0.88em;color:#576060;text-align:center;">
+<p>Agent 协作基础设施全景框架 · Generated for GitHub HTML</p>
+</footer>
+
+</div><!-- /.page -->
+</body>
+</html>
